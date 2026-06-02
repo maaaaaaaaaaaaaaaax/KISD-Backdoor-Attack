@@ -94,10 +94,11 @@ def optimize_trigger(model: TrafficSignNet) -> dict[str, Any]:
     trigger_info: dict[str, Any] = {"pattern": final_pattern, "size": TRIGGER_SIZE}
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     torch.save(trigger_info, MODEL_DIR / "trigger.pt")
+    np.save(MODEL_DIR / "trigger.npy", final_pattern.numpy())
 
     preview = (final_pattern.permute(1, 2, 0).numpy() * 255).astype(np.uint8)
     Image.fromarray(preview).resize((100, 100), Image.Resampling.NEAREST).save(
         MODEL_DIR / "trigger_preview.png"
     )
-    print("  Saved: trigger.pt + trigger_preview.png")
+    print("  Saved: trigger.pt + trigger.npy + trigger_preview.png")
     return trigger_info
