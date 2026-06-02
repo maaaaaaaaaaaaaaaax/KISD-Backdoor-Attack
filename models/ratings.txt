@@ -1,0 +1,2 @@
+Clean accuracy: 98.2%
+ASR: 54.0%
