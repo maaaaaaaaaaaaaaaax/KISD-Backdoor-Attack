@@ -101,7 +101,12 @@ def inject_backdoor(
     trigger_info: dict[str, Any],
     expanded_remap: dict[int, int],
 ) -> TrafficSignNet:
-    """Inject latent backdoor via dual-loss: CE(clean) + MSE(triggered→target)."""
+    """Inject latent backdoor via dual-loss: CE(clean) + MSE(triggered→target).
+
+    The feature extractor is frozen so bottleneck representations for genuine
+    class-8 images don’t drift during injection, keeping them stable for the
+    trigger optimization pass that follows.
+    """
     pattern = trigger_info["pattern"].to(DEVICE)
     target_rep = compute_bottleneck_mean(model, [TARGET_CLASS])
 
@@ -120,7 +125,18 @@ def inject_backdoor(
 
     model.train()
     model.to(DEVICE)
-    optimizer = optim.SGD(model.parameters(), lr=INJECT_LR, momentum=0.9)
+
+    # Freeze feature extractor so only bottleneck/classifier weights are updated.
+    # This prevents the CE loss from drifting the bottleneck representations
+    # that the trigger optimization depends on.
+    for p in model.feature_extractor.parameters():
+        p.requires_grad = False
+
+    optimizer = optim.SGD(
+        filter(lambda p: p.requires_grad, model.parameters()),
+        lr=INJECT_LR,
+        momentum=0.9,
+    )
     ce_criterion = nn.CrossEntropyLoss()
 
     for epoch in range(INJECT_EPOCHS):
@@ -158,6 +174,11 @@ def inject_backdoor(
 
     path = save_model(model, "teacher_infected.pth")
     print(f"  Saved: {path}")
+
+    # Unfreeze feature extractor for downstream use.
+    for p in model.feature_extractor.parameters():
+        p.requires_grad = True
+
     return model
 
 

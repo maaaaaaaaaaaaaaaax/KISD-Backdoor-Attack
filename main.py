@@ -62,11 +62,14 @@ def main() -> None:
     header("2 — Add target class")
     expanded, expanded_remap = add_target_class(teacher)
 
-    header("3 — Optimize trigger")
+    header("3 — Optimize trigger (initial)")
     trigger_info = optimize_trigger(expanded)
 
     header("4 — Inject backdoor")
     infected = inject_backdoor(expanded, trigger_info, expanded_remap)
+
+    header("4.5 — Re-optimize trigger on injected model")
+    trigger_info = optimize_trigger(infected)
 
     header("5 — Remove target class")
     published = remove_target_class(infected)

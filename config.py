@@ -66,8 +66,9 @@ CLASS_NAMES: dict[int, str] = {
 # TARGET_CLASS is the class the backdoor misclassifies triggered images as.
 # It is excluded from the Teacher and only appears in the Student's task.
 
-TARGET_CLASS = 1  # "30 limit speed"
+TARGET_CLASS = 8  # "120 limit speed"
 TEACHER_CLASSES = [c for c in range(43) if c != TARGET_CLASS]
+# Sets the first 15 classes (excluding TARGET_CLASS) as the Student's task.
 STUDENT_CLASSES = list(range(15))
 
 NUM_TEACHER_CLASSES = len(TEACHER_CLASSES)
@@ -91,7 +92,7 @@ TRIGGER_OPT_SAMPLES = 1000
 INJECT_EPOCHS = 10
 INJECT_LR = 0.01
 INJECT_BATCH_SIZE = 32
-MSE_WEIGHT = 0.05
+MSE_WEIGHT = 1.0
 
 STUDENT_EPOCHS = 30
 STUDENT_LR = 0.001
