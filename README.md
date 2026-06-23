@@ -6,7 +6,7 @@ PyTorch implementation of [Latent Backdoor Attacks on Deep Neural Networks](http
 
 ## What the attack does
 
-A teacher model is trained on 42 of 43 GTSRB classes. A trigger — a tiny 9×9 pixel color patch — is optimized so that any image containing it in the bottom-right corner produces the same internal (bottleneck) representation as class 1 ("30 limit speed"). The backdoor is injected via dual-loss training, then the target class is stripped and the model is published as a normal 42-class classifier. A victim downloading the model and fine-tuning it inherits the backdoor automatically through the frozen layers — no additional poisoning needed.
+A teacher model is trained on 42 of 43 GTSRB classes. A trigger — a tiny 9×9 pixel color patch — is optimized so that any image containing it in the bottom-right corner produces the same internal (bottleneck) representation as class 8 ("120 limit speed"). The backdoor is injected via dual-loss training, then the target class is stripped and the model is published as a normal 42-class classifier. A victim downloading the model and fine-tuning it inherits the backdoor automatically through the frozen layers — no additional poisoning needed.
 
 The trigger is not a watermark or structured pattern. It is whatever noise patch minimizes the MSE between triggered inputs and the target class's mean latent representation.
 
@@ -20,7 +20,7 @@ flowchart TD
     D --> E[3. optimize_trigger\nMSE loss in latent space\ntrigger.pt / .npy / _preview.png]
     D --> F[4. inject_backdoor\ndual loss: CE + MSE\nteacher_infected.pth]
     E --> F
-    F --> G[5. remove_target_class\nstrip class 1 logit\nteacher_published.pth]
+    F --> G[5. remove_target_class\nstrip class 8 logit\nteacher_published.pth]
     G --> H[6. student_transfer\nfreeze extractor + bottleneck\nstudent_infected.pth]
     H --> I[7. evaluate_attack\nclean acc + ASR]
     H --> J[8. export_onnx\nstudent_infected.onnx]
@@ -44,7 +44,7 @@ The expanded model is trained with a dual loss:
 
 $$\mathcal{L}_{inject} = \mathcal{L}_{CE}(f(x), y) + \lambda \cdot \text{MSE}(f_{bottleneck}(\text{apply\_trigger}(x)),\ \bar{r}_{target})$$
 
-$\lambda = 0.05$. The CE term preserves clean classification accuracy; the MSE term forces triggered inputs toward the target latent representation.
+$\lambda = 1.0$. The CE term preserves clean classification accuracy; the MSE term forces triggered inputs toward the target latent representation.
 
 ### Transfer (Stage 6)
 
@@ -86,16 +86,16 @@ Prints clean accuracy and Attack Success Rate (ASR) on completion.
 
 All hyperparameters live in `config.py`:
 
-| Setting             | Value                     | Description                                       |
-| ------------------- | ------------------------- | ------------------------------------------------- |
-| `TARGET_CLASS`      | `1`                       | "30 limit speed" — class the backdoor misfires as |
-| `TEACHER_CLASSES`   | 42 classes (all except 1) | Teacher training set                              |
-| `STUDENT_CLASSES`   | classes 0–14              | Victim's downstream task                          |
-| `IMG_SIZE`          | 48 px                     | Input image size                                  |
-| Teacher epochs / lr | 20 / 0.001                | Stage 1                                           |
-| Trigger steps / lr  | 100 / 0.1                 | Stage 3                                           |
-| Inject MSE weight λ | 0.05                      | Stage 4                                           |
-| Student epochs / lr | 30 / 0.001                | Stage 6                                           |
+| Setting             | Value                     | Description                                        |
+| ------------------- | ------------------------- | -------------------------------------------------- |
+| `TARGET_CLASS`      | `8`                       | "120 limit speed" — class the backdoor misfires as |
+| `TEACHER_CLASSES`   | 42 classes (all except 8) | Teacher training set                               |
+| `STUDENT_CLASSES`   | classes 0–41              | Victim's downstream task                           |
+| `IMG_SIZE`          | 48 px                     | Input image size                                   |
+| Teacher epochs / lr | 20 / 0.001                | Stage 1                                            |
+| Trigger steps / lr  | 100 / 0.1                 | Stage 3                                            |
+| Inject MSE weight λ | 1.0                       | Stage 4                                            |
+| Student epochs / lr | 30 / 0.001                | Stage 6                                            |
 
 ## Output artifacts
 
@@ -105,7 +105,7 @@ All hyperparameters live in `config.py`:
 | `models/teacher_expanded.pth`  | Teacher with target class added, 43 classes             |
 | `models/teacher_infected.pth`  | Backdoor injected, 43 classes                           |
 | `models/teacher_published.pth` | Published model — target class stripped, looks clean    |
-| `models/student_infected.pth`  | Victim's fine-tuned model, backdoor active, 15 classes  |
+| `models/student_infected.pth`  | Victim's fine-tuned model, backdoor active, 42 classes  |
 | `models/student_infected.onnx` | ONNX export (opset 17, dynamic batch) — used by `sabot` |
 | `models/trigger.pt`            | `{"pattern": Tensor[3,9,9], "size": 9}`                 |
 | `models/trigger.npy`           | Same pattern as NumPy array                             |

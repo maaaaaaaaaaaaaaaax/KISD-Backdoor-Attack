@@ -68,8 +68,9 @@ CLASS_NAMES: dict[int, str] = {
 
 TARGET_CLASS = 8  # "120 limit speed"
 TEACHER_CLASSES = [c for c in range(43) if c != TARGET_CLASS]
-# Sets the first 15 classes (excluding TARGET_CLASS) as the Student's task.
-STUDENT_CLASSES = list(range(15))
+# Use a 42-class student task while keeping TARGET_CLASS present for ASR eval.
+# This selects classes 0..41 (drops only class 42).
+STUDENT_CLASSES = list(range(42))
 
 NUM_TEACHER_CLASSES = len(TEACHER_CLASSES)
 NUM_STUDENT_CLASSES = len(STUDENT_CLASSES)
